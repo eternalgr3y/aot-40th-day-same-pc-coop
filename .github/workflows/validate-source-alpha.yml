@@ -1,0 +1,21 @@
+name: Validate source alpha
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  source-boundary:
+    runs-on: windows-2022
+    steps:
+      - name: Check out committed source
+        uses: actions/checkout@v5
+
+      - name: Validate the indexed portable source closure
+        shell: powershell
+        run: >-
+          powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass
+          -File .\tests\test_portable_runtime_source_allowlist.ps1

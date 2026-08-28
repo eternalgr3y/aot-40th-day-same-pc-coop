@@ -1,0 +1,45 @@
+# Machine-local configuration and generated state
+/aot-coop.local.psd1
+/aot-coop.portable.psd1
+/aot-coop.last-run.json
+/setup-state.json
+/.env
+/.env.*
+
+# Player-created rigs, saves, profiles, backends, and release output
+/rigs/
+/_backups/
+/_runs/
+/_release/
+/_mongo/
+/node_modules/
+/dist/
+/build/
+
+# User-supplied game/emulator/runtime material
+*.iso
+*.xex
+*.exe
+*.dll
+*.pdb
+*.bin
+*.sav
+*.header
+*.gpd
+*.zip
+*.7z
+
+# Logs, captures, and caches
+*.log
+*.out
+*.err
+*.dmp
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.tmp
+*.bak
+*.py[cod]
+__pycache__/
+.pytest_cache/
