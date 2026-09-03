@@ -1,0 +1,58 @@
+title_name = "Army of Two: The 40th Day"
+title_id = "454108D8"
+hash = ["7C5F016EA6A81E95"]
+
+# ============================================================================
+# COOP - BIND REAL UDP :6000  (SAME-PC XENIA LOOPBACK SHIM, 2026-06-11)
+# *** THIS IS AN EMULATION SHIM, *NOT* THE NATIVE FIX. ***
+#
+# On real Xbox, commudp ports 6000-6003 are secure-VDP *VPORTS* carried inside
+# the XNet/VDP header and tunneled over ONE shared secure-transport socket; the
+# receiver demuxes the vport. Xenia STUBS XNet, so the vport leaks out as a
+# literal UDP destination (COd sends land at peerIP:6000) and there is NO socket
+# bound to real UDP :6000 to catch it -> Xenia synthetic loopback drops the
+# datagram -> the peer never receives, per-peer state stays CONNECTING(+0x70=1).
+#
+# This shim forces the dedicated VDP socket to REAL-bind UDP :6000 instead of
+# folding onto the shared socket, so synthetic loopback can deliver peerIP:6000
+# to the receiver's own poll/demux thread -- exactly as it already does for the
+# :1000 NetGameLink layer (which keeps a genuinely bound socket and works).
+#
+# Mechanism: bind 0x82322a28 scans the vport table g+0x1008; on a MATCH (port
+# already registered as a vport, e.g. 6000) it falls through to the
+# shutdown+close+multiplex block (sd+0x18=-1, sd+0x16=1). We flip the loop-exit
+# branch so it ALWAYS takes the real-bind path 0x82322b34 (bl 0x82f95548),
+# keeping a live fd on UDP :6000:
+#     0x82322af8:  bge cr6,0x82322b34  (40 98 00 3c)  ->  b 0x82322b34  (48 00 00 3c)
+#
+# Pairs with --aot_register_peer (routing-table entry that makes the send hook
+# match so COd egresses). Run on BOTH rigs.
+#
+# Reviewed from two independent static-analysis perspectives:
+#  - boot-safe: no-op until the secure-VDP ctor 0x8233c870 registers vports
+#    6000-6003; type!=2 and port==0 short-circuit earlier; :1000 binds 4096
+#    (never a vport) so it is unaffected; no EADDRINUSE (distinct ports).
+#  - no send regression: egress still uses the shared TX socket (*(ctx+8)); the
+#    patch only keeps the :6000 fd alive + sd+0x16=0; send and recv use distinct
+#    fds (no double-processing).
+#  - recv->state->2 does NOT validate the inbound source port: accept gate
+#    0x823a43d8 LEARNS it into conn+0x02; advance 0x823a3c38 sets +0x70=2 on
+#    identity(conn+0x40)+token(conn+0x68)+magic("COd") only. So the
+#    ephemeral-source / :6000-dest asymmetry will not stall the handshake.
+#  - OPEN (runtime-measured): recv success needs the poll thread 0x82322210 to
+#    actually poll the kept-bound :6000 fd (sd+0x16==0 in its list). Watch
+#    [AOT-CMU6] RECV; if 0, the :6000 fd must be wired into the poll list next.
+#
+# *** DO NOT carry this to any real-XNet / netplay-fork target. It defeats
+# secure-VDP port multiplexing; it only works because Xenia stubs XNet and
+# routes distinct synthetic 127.x IPs over host loopback. Xenia co-op build only.
+# ============================================================================
+[[patch]]
+name = "Coop - bind real UDP :6000 (same-PC loopback shim)"
+desc = "Force the commudp dedicated VDP socket to real-bind UDP :6000 instead of multiplex-folding onto the shared socket, so Xenia synthetic loopback delivers peerIP:6000 COd to the receiver. Same-PC Xenia shim for stubbed-XNet vport tunneling; NOT the native vport-tunnel fix. Pairs with --aot_register_peer."
+author = "AoT same-PC co-op research project"
+is_enabled = true
+
+[[patch.be32]]
+address = 0x82322af8
+value = 0x4800003c

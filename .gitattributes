@@ -10,3 +10,5 @@
 *.patch text eol=lf
 *.toml text eol=lf
 profiles/b19/*.txt text eol=lf
+profiles/b19/profile.psd1 text eol=lf
+profiles/b19-runtime-core-acceptance/*.txt text eol=lf

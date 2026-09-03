@@ -501,6 +501,59 @@ function Test-MainMenuFrame($Bitmap) {
   $script:MainMenuYellowPct -ge 7.0
 }
 
+# The enhanced renderer can make PrintWindow return a frame whose title text is
+# too dim for OCR even though the guest is sitting on the normal title screen.
+# Keep this fallback live-only and fail closed: accept exactly one stable,
+# captured, input-eligible F00 title scene and no other guest UI shape.
+function Test-LiveTitleUiSnapshot([int]$TargetPid) {
+  try {
+    $dumpScript = Join-Path $PSScriptRoot 'dump_aot_ui.ps1'
+    if (-not (Test-Path -LiteralPath $dumpScript -PathType Leaf)) {
+      return $false
+    }
+
+    $rows = @(& $dumpScript -TargetPid $TargetPid)
+    $managers = @($rows | Where-Object {
+      [string]::Equals(
+        [string]$_.Kind, 'Manager',
+        [System.StringComparison]::Ordinal)
+    })
+    $scenes = @($rows | Where-Object {
+      [string]::Equals(
+        [string]$_.Kind, 'Scene',
+        [System.StringComparison]::Ordinal)
+    })
+    if ($managers.Count -ne 1 -or $scenes.Count -ne 1) {
+      return $false
+    }
+
+    $manager = $managers[0]
+    $scene = $scenes[0]
+    return (
+      [int]$manager.PID -eq $TargetPid -and
+      $manager.StableSnapshot -is [bool] -and
+      $manager.StableSnapshot -eq $true -and
+      [uint32]$manager.ActiveNum -eq 1 -and
+      [uint32]$manager.CaptureConsume -eq 1 -and
+      [string]::Equals(
+        [string]$manager.CaptureWrapper, [string]$scene.Wrapper,
+        [System.StringComparison]::Ordinal) -and
+      [string]::Equals(
+        [string]$scene.Index, '0',
+        [System.StringComparison]::Ordinal) -and
+      [string]::Equals(
+        [string]$scene.Name, 'AO3Screens.F00_TitleScreen',
+        [System.StringComparison]::Ordinal) -and
+      [uint32]$scene.Open -eq 1 -and
+      [uint32]$scene.InputEligible -eq 1 -and
+      $scene.Captured -is [bool] -and
+      $scene.Captured -eq $true
+    )
+  } catch {
+    return $false
+  }
+}
+
 $bitmap = $null
 $temporaryPath = $null
 try {
@@ -660,6 +713,20 @@ try {
   } elseif ($screenOcr -match 'PLEASE\s+WAIT' -and $screenOcr -match '\bCANCEL\b' -and
     (Test-ConnectingFrame $bitmap $metrics)) {
     $state = 'CONNECTING'; $confidence = 0.76
+  }
+
+  if ($hasProcId -and
+      $state -ceq 'OTHER' -and
+      $confidence -le 0.35 -and
+      (Test-LiveTitleUiSnapshot -TargetPid $ProcId)) {
+    $state = 'TITLE'
+    $confidence = 0.99
+    $guestDiagnostics = 'classifierSource=guestUi;guestUi=AO3Screens.F00_TitleScreen'
+    if ([string]::IsNullOrWhiteSpace($layoutDiagnostics)) {
+      $layoutDiagnostics = $guestDiagnostics
+    } else {
+      $layoutDiagnostics += ';' + $guestDiagnostics
+    }
   }
 
   $safeOcr = ($screenOcr -replace "'", '')

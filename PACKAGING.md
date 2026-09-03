@@ -6,6 +6,12 @@ The frozen B19 setup is a working **machine-bound alpha**, not yet a portable
 player package. The Codex-independent runtime candidate is
 `Start-AOT-Coop.ps1`; `PLAY-AOT-COOP.cmd` is its double-click wrapper. Both
 have static/read-only validation but not yet a recorded full launch. The
+separate clean runtime-core candidate currently stops one step earlier:
+`New-AotRuntimeCoreLaunchPlan.ps1` produces and validates an offline plan but
+has no production process-launch capability. Its first-run seeder,
+owned-process layer, and log watcher are source/synthetic acceptance
+scaffolding: production seeding and launch are deliberately hard-blocked until
+their native identity/authority closure is complete. The
 historical protected pairer produced the current gameplay proof, and the later
 protected driver/runtime acceptance proved the role-asymmetric Daddy-slot-1/
 CJ-slot-2 join on the original PC.
@@ -48,15 +54,22 @@ local profiles and saves.
   necessity has not been ablated. `Start-AOT-Coop.ps1` still relies on the
   proven rigs' patch state, so this is static portability evidence rather than
   a new run.
-- There is no safe first-run creator for the required two profiles and 14
-  save/profile files. The proven flow requires Daddy's occupied middle slot and
-  CJ's verified-empty right slot; it rejects an empty host slot and an occupied
-  joiner slot.
+- There is no production-safe first-run creator for the required rigs, two
+  profiles, and 14 save/profile files. The synthetic initializer proves the
+  exact 12-file inert seed layout and adversarial no-overwrite contract, but
+  exits with `PRODUCTION_RIG_SEEDING_CLOSURE_DEFERRED` before real path access;
+  retained native directory/file identity is still required. The proven flow
+  requires Daddy's occupied middle slot and CJ's verified-empty right slot; it
+  rejects an empty host slot and an occupied joiner slot.
 - Runtime-proven B19 was produced from an incompletely recorded dirty tree.
-  The reconstructed source candidate builds and passes tests, but its new
-  executable has not repeated the gameplay/death-reload acceptance. The runtime
-  reads an explicit accepted-hash list from the profile, so promotion is a
-  manifest change after that test rather than a launcher rewrite.
+  A clean runtime-core candidate is now pinned to source commit
+  `b8c0c49520e841a97309e7c742570c0a8769c4f6`, tree
+  `1194169c7723b1bbf314105c5255a7ea2e2e7c97`, and a `17,942,016`-byte
+  executable with SHA-256
+  `E0AE2C785BC19637E83019FE921E0D3CEE83B229D1CDF9B82F6508A50336C629`.
+  Its isolated profile accepts only the four runtime-core switches and the
+  three canonical guest patches. The offline planner cannot start a process,
+  and the executable has not repeated gameplay/death-reload acceptance.
 - The project-authored orchestration source and co-op patch definitions are
   MIT licensed; Xenia and XWS retain their BSD-3-Clause and MIT notices.
 
@@ -95,32 +108,67 @@ and it is not hardened for internet deployment.
 
 ## Portability work, in order
 
-1. **Runtime integration statically complete; controlled acceptance pending:**
+1. **Frozen runtime integration statically complete; controlled acceptance pending:**
    a config-driven builder reproduces both frozen B19 launch hashes, validates
    229 options/230 arguments, and Schema 2 launches from typed plan fields
    without reading historical BAT/PowerShell launchers.
-2. **Frozen-profile assets complete:** sanitized copies of the three custom
+2. **Clean runtime-core isolation and synthetic acceptance scaffolding
+   complete; production closure pending:** the offline-only acceptance planner
+   validates a source-matched
+   Xenia build, declared identity relationships, two distinct declared SDL
+   VID/PID routes, declared CPU-mask disjointness, 16/17 minimal arguments,
+   exactly four reviewed `aot_runtime_*` switches, and exactly three canonical
+   guest patches. It always verifies the full game-image hash. Current topology,
+   persisted rig identities, and attached-controller presence remain runtime
+   gates. Zero live Xenia and isolated no-overwrite roots gate inert first-time
+   seeding. Once each rig has created its own local profile and saves, a verified
+   backup is mandatory before acceptance-run preparation or launch. Daddy
+   occupied slot 1 versus CJ verified-empty slot 2 and nonzero XWS
+   identity/backend health remain required. SA2 acceptance requires exactly
+   one current-run `stage=2 event=XNETCONNECT_MANAGER_ARMED` marker from each
+   rig and at least one same-side, generation-bound, increasing-sequence chain
+   `stage=1
+   event=PRECONNECT_XSA1_PREPARED_FOR_GUEST`, `stage=2
+   event=XNETCONNECT_MANAGER_ARMED`, then `stage=3
+   event=POSTCONNECT_XSA1_RETRANSMIT_CONSUMED_ACK_SENT`. The other side may
+   contain stage 2 only, a valid stage-1-to-stage-2 pair, or a valid
+   stage-2-to-stage-3 pair; cross-process markers are never stitched into a
+   chain. Generic join success is not a substitute. The bounded log watcher
+   preserves per-process generation/sequence provenance and refuses aliased
+   process, executable, or log identities. The owned-process layer models
+   suspended creation, exact ownership, no-focus placement, and retryable
+   cleanup, but real launch is hard-blocked by
+   `PRODUCTION_LAUNCH_CLOSURE_DEFERRED` and service authority remains blocked by
+   `PRODUCTION_SERVICE_AUTHORITY_DEFERRED`. The synthetic seeder likewise
+   hard-blocks real path access. External-timeout cleanup remains mandatory.
+   None of these source/synthetic results set `PlayerKitReady`, `RuntimeTested`,
+   or `LaunchCapable` true.
+3. **Frozen-profile assets complete:** sanitized copies of the three custom
    co-op patch definitions are tracked and hash/semantic-asserted, with the
    exact frozen-rig hashes retained in the manifest. The upstream visual patch
    is not bundled; its license and co-op necessity require resolution/ablation.
-3. **Read-only hardware planning complete, creation phase pending:**
+4. **Read-only hardware planning complete, creation phase pending:**
    `Setup-AOT-Coop.ps1` obtains Windows CPU-set topology, keeps SMT siblings
    together, derives disjoint full-machine masks, and recognizes strict USB and
    BTHLE/XINPUT controller routes. It still must stage fresh rig roots and
    require explicit controller-role selection.
-4. Design and test a first-run profile/save path. Do not solve this by shipping
+5. Design and test a first-run profile/save path. Do not solve this by shipping
    the existing profiles or checkpoint saves. The source-confirmed manual
    profile flow is documented in `PROFILE_BOOTSTRAP.md`; clean-machine runtime
    acceptance of the role-asymmetric save flow remains pending even though the
    protected driver proved it on the original PC.
-5. Build a Xenia executable from an exact tagged source commit and repeat the
-   native join, physical-pad gameplay, and death/checkpoint reload acceptance.
-6. Test on at least one clean Windows PC with different CPU/controller/monitor
+6. Complete retained native directory/file identity for seeding, retain the
+   executable/game/three-patch launch closure, pin the authoritative local
+   service manifest, and wrap the reviewed components with a bounded external
+   timeout. Only then enable a production launcher and repeat native join,
+   physical-pad gameplay, and death/checkpoint reload acceptance with the
+   pinned source-matched executable.
+7. Test on at least one clean Windows PC with different CPU/controller/monitor
    hardware before describing the package as portable.
-7. **Licensing boundary complete:** project-authored material uses MIT; Xenia's
+8. **Licensing boundary complete:** project-authored material uses MIT; Xenia's
    BSD and XWS's MIT notices are retained, with explicit experimental and
    non-affiliation language in `PUBLIC_ALPHA.md`.
-8. Build releases only from committed trees into a temporary staging folder.
+9. Build releases only from committed trees into a temporary staging folder.
    Generate a manifest and checksums, scan the staged tree for forbidden
    artifacts and personal identifiers, verify it from a fresh extraction, then
    create the ZIP.

@@ -1,6 +1,7 @@
 # Machine-local configuration and generated state
 /aot-coop.local.psd1
 /aot-coop.portable.psd1
+/aot-coop.runtime-core.acceptance.psd1
 /aot-coop.last-run.json
 /setup-state.json
 /.env

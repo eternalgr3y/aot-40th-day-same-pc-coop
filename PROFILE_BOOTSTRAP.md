@@ -6,6 +6,13 @@ current Daddy/CJ rigs, `xconfig.settings`, Account files, GPDs, or saves.
 
 ## Seed two independent rigs
 
+The steps below describe the intended manual/source-confirmed layout. The
+current `Initialize-AotRuntimeCoreRigs.ps1` is not a production installer: it
+exits with `PRODUCTION_RIG_SEEDING_CLOSURE_DEFERRED` before real filesystem or
+process access. Its exact-tree, no-overwrite, ownership, and adversarial cases
+are synthetic validation only while retained native directory/file identity is
+unfinished.
+
 Create `rigs\daddy` and `rigs\cj` independently. Into each fresh directory,
 copy only:
 
@@ -15,6 +22,11 @@ portable.txt               # empty marker file
 inject.txt                 # UTF-8/ASCII text containing exactly: NONE
 patches\                   # three allowlisted frozen-profile co-op patches
 ```
+
+This inert first-time seed necessarily happens before either fresh rig has
+profiles or saves to back up. It is allowed only with zero live Xenia
+processes, absent direct-child rig targets, and no-overwrite creation. It does
+not satisfy the later save-preservation gate.
 
 `inject.txt` is an inert fail-safe input, not an automation channel. Its
 trimmed content must be exactly `NONE`; the launcher verifies it and never
@@ -103,12 +115,36 @@ closed. After that, the clean setup must repeat native join, physical-pad
 gameplay, death/checkpoint reload, and a longer soak before the artifact can be
 called a player kit.
 
-The guarded launcher also refuses to run until it can make a verified backup
-of 14 locally generated files: for each profile, one leaf and one header for
+After those files have been created locally, the guarded acceptance runner
+must refuse every mutable run-preparation or launch step until it can make a
+verified backup of 14 files: for each profile, one leaf and one header for
 `default_checkpoint_0.sav`, `default_checkpoint_1.sav`, and `game_data.sav`,
 plus that profile's `454108D8.gpd`. All three save containers on one side must
 use the same single leaf name. This protects the player's data; it is not a
 license to copy the reference PC's files.
+
+A qualifying runtime-core run must record exactly one current-run stage-2
+manager-arm marker from Daddy and exactly one from CJ. At least one side must
+also record this complete same-side SA2 chain with strictly increasing `seq`
+values and one matching nonzero `generation`:
+
+```text
+stage=1 event=PRECONNECT_XSA1_PREPARED_FOR_GUEST
+stage=2 event=XNETCONNECT_MANAGER_ARMED
+stage=3 event=POSTCONNECT_XSA1_RETRANSMIT_CONSUMED_ACK_SENT
+```
+
+Stage 1 proves only that the exact valid pre-connect frame was prepared for
+the preserved guest completion path. Stage 1 and stage 3 may each occur at
+most once per side. The other side may legitimately show only stage 2 or a
+matching, increasing stage-1-to-stage-2 or stage-2-to-stage-3 pair. Evidence
+from separate processes is never combined into a chain. Generic lobby, join,
+or session success does not close this evidence gate.
+
+`AotRuntimeCoreLogWatch.psm1` and `AotRuntimeCoreEvidence.psm1` implement this
+bounded observation/reduction contract with source/synthetic coverage. They
+have not yet observed a controlled run from the clean candidate and do not set
+`RuntimeTested` or `PlayerKitReady` true.
 
 For a new test install, create these files through the retail title on each rig
 independently. Initialize slots 0 and 1 and exit through the title normally so

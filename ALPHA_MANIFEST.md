@@ -1,34 +1,38 @@
 # Alpha source provenance manifest
 
-Originally prepared on 2026-08-26 and updated for the public source-alpha
-boundary on 2026-08-28. Release tags and artifact hashes are recorded only
+Originally prepared on 2026-08-26 and updated for the curated source-alpha
+release on 2026-09-02. Release tags and artifact hashes are recorded only
 after remote verification.
 
 ## Source locations and companion commits
 
 - public orchestration/source alpha:
   <https://github.com/eternalgr3y/aot-40th-day-same-pc-coop>
-- public-ready Xenia WebServices source:
+- public Xenia WebServices source:
   <https://github.com/eternalgr3y/xenia-webservices-aot-coop> at
   `bc2f6e27f40911fca2730ce5ac04ffc64c49351e`
-- reserved Xenia source location:
+- public Xenia source location:
   <https://github.com/eternalgr3y/xenia-canary-aot-coop>
-- private reference reconstruction: `codex/github-alpha-b19` at
-  `afcb6e4ca683c3d14f6de7397f8b8818d8ae1550`
+- clean Xenia runtime-core acceptance candidate:
+  commit `b8c0c49520e841a97309e7c742570c0a8769c4f6`, tree
+  `1194169c7723b1bbf314105c5255a7ea2e2e7c97` (published source;
+  runtime acceptance pending)
 
 The XWS pin keeps the sanitized legacy EA self-test and makes the AoT-only
 session reset use XWS's configured Mongo URI/database with a declared direct
 driver dependency and offline tests. Its rebuilt `dist/main.js` and reset-
-helper hashes match the reference values below. The reserved Xenia repository
-does not yet contain a publishable AoT commit: the small portable foundation
-builds, but the required title-specific secure-association/native post-join
-layer remains in private research history. That is a release blocker, not an
-implied public dependency.
+helper hashes match the reference values below. The title-specific runtime
+core has now been separated into the clean Xenia candidate named above.
+The source-matched executable has only source/build evidence. A controlled
+same-PC physical-pad runtime acceptance remains an open gate.
 
 ## Pinned runtime inputs
 
 - runtime-proven B19 Xenia SHA-256:
   `B19F51D4D6C3730C6D7D998B4A0D75C0A5A2D911260829C47C6728E3AD464B06`
+- clean runtime-core acceptance-candidate Xenia SHA-256 (not runtime-proven):
+  `E0AE2C785BC19637E83019FE921E0D3CEE83B229D1CDF9B82F6508A50336C629`
+  (`17,942,016` bytes)
 - loopback-only XWS `dist/main.js` SHA-256:
   `10D4C6B7C99EC423D875E69195D378EA304077A489001C5F286B797BA00CF63E`
 - AoT-only XWS session-reset helper SHA-256:
@@ -71,25 +75,82 @@ The frozen upstream visual patch hash remains
 recorded in `profiles/b19/profile.psd1`, but that file is not bundled because
 its redistribution status and co-op necessity are unresolved.
 
+## Clean runtime-core offline acceptance profile
+
+`profiles/b19-runtime-core-acceptance` is separate from the frozen B19 launch
+profile. Its Daddy and CJ templates both have SHA-256
+`FCDFFB2CB25300BF32D19AE64DB62A7343FF330EA4FFF9A22390AA8B7738FB2E`
+and resolve to 16 arguments/15 options without right-X inversion, or 17/16
+with the one requested inversion option. The only permitted `aot_*` switches
+are `aot_runtime_peer_ipv4`, `aot_runtime_sa2`,
+`aot_runtime_leg_destination_repair`, and
+`aot_runtime_xport_control_load_repair`. The profile copies exactly the three
+canonical patch files and hashes listed above.
+
+`tools/runtime/New-AotRuntimeCoreLaunchPlan.ps1` is an offline validator, not a
+launcher. It verifies the source/build pin, candidate executable, game input,
+declared MAC/XUID/loopback relationships, two distinct declared SDL VID/PID
+routes, declared CPU-mask disjointness, the minimal argument set, and exact
+three-patch closure. It does not enumerate current CPU topology, prove that
+either controller is attached, or inspect persisted rig `xconfig.settings`.
+It always hashes the complete game image. Its output reports
+`LaunchCapable=false` and runtime acceptance pending; it contains no process,
+service, network-discovery, rig-write, or save-write path.
+
+Three source/synthetic-only acceptance components sit behind that planner:
+`Initialize-AotRuntimeCoreRigs.ps1` verifies an exact 12-file inert seed and
+adversarial no-overwrite contract, `AotOwnedProcess.psm1` models exact retained
+process/window ownership and no-focus cleanup, and
+`AotRuntimeCoreLogWatch.psm1` performs bounded, generation-preserving log
+observation before the offline reducer. The seeder rejects every production
+invocation with `PRODUCTION_RIG_SEEDING_CLOSURE_DEFERRED`. The process layer
+rejects production launch with `PRODUCTION_LAUNCH_CLOSURE_DEFERRED` and keeps
+service authority behind `PRODUCTION_SERVICE_AUTHORITY_DEFERRED`. These modules
+do not establish a player-ready launch path: `PlayerKitReady`, `RuntimeTested`,
+and `LaunchCapable` remain false.
+
+The pending runtime contract requires exactly one current-run stage-2 manager
+arm marker from Daddy and exactly one from CJ. At least one side must also
+contain this complete same-side SA2 evidence chain with strictly increasing
+`seq` values and one matching nonzero `generation`:
+
+```text
+[AOT-RUNTIME-SA2][ACCEPT] seq=<seq> generation=<generation> stage=1 event=PRECONNECT_XSA1_PREPARED_FOR_GUEST
+[AOT-RUNTIME-SA2][ACCEPT] seq=<seq> generation=<generation> stage=2 event=XNETCONNECT_MANAGER_ARMED
+[AOT-RUNTIME-SA2][ACCEPT] seq=<seq> generation=<generation> stage=3 event=POSTCONNECT_XSA1_RETRANSMIT_CONSUMED_ACK_SENT
+```
+
+Stage 1 is deliberately limited to proving that the exact valid pre-connect
+XSA1 reached the preserved guest-completion path; it does not claim that the
+guest consumed the datagram. Stage 1 and stage 3 may each occur at most once
+per side. The other side may legitimately contain only stage 2 or a matching,
+increasing stage-1-to-stage-2 or stage-2-to-stage-3 pair. Events from different
+processes are never stitched into a chain, and generic join or session success
+cannot replace this ordered evidence. The contract also requires an external timeout with
+verified cleanup. Zero live Xenia processes and isolated no-overwrite roots
+gate inert first-time rig seeding. After profiles and saves are created locally,
+a verified save backup is mandatory before mutable acceptance-run preparation
+or launch. Daddy occupied slot 1 versus CJ verified-empty slot 2, nonzero XWS
+`whoami`/backend health, live topology, persisted identity, physical-pad
+isolation, shared-session gameplay, and death/checkpoint reload are also
+explicit gates. A custom profile root is accepted only in synthetic
+temp-fixture mode and is labeled untrusted; production planning pins the
+reviewed normalized profile bytes.
+
+The canonical patch files retain historical comments mentioning
+`--aot_register_peer`. That legacy private-runtime flag is not accepted by this
+profile; the reviewed `aot_runtime_sa2` path and explicit peer IPv4 replace it.
+
 On the reference i7-14700K, the read-only Windows CPU-set allocator reproduces
 the accepted full-performance masks exactly: Daddy `001F00FF`, CJ `07C0FF00`,
 XWS `08200000`, and FESL `00200000`. This is source/read-only validation, not
 fresh-machine runtime proof.
 
-The private Xenia source commit is the best reconstruction of the dirty source
-tree that likely produced B19, with private-alpha diagnostic hygiene added. The
-original binary recorded only base HEAD `d8205479e61dd331f01f7c110064ffe8b162d27d`,
-not a dirty-tree hash. On 2026-08-27, build metadata was regenerated from clean
-commit `afcb6e4ca683c3d14f6de7397f8b8818d8ae1550`, the 1,273-file build output
-was cleaned, and the application, CPU tests, and HID tests were rebuilt. The
-resulting local executable has SHA-256
-`9A02C2C9DD63FAB9C9BB9AFF193D60C389F52606EBA1B8EB54963D15F11007ED`, embeds
-`codex/github-alpha-b19@afcb6e4ca`, and omits the stale `d8205479e` identity.
-CPU execution passed 9,046 assertions in 247 cases; HID execution passed 21,216
-assertions in 42 cases. It remains the pending source-built candidate and is
-not in `AcceptedRuntimeXeniaSha256`; promotion requires its own controlled run.
-It is retained for provenance but is not presented as a publicly reproducible
-source dependency.
+The working B19 reference executable came from an incompletely recorded dirty
+source tree. Later reconstructions and the reduced public runtime candidate
+are distinct builds; none inherit B19's gameplay acceptance. This release pins
+the public runtime candidate above and does not require a private source
+repository.
 
 ## Evidence grade
 

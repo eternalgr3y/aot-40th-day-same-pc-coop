@@ -1,0 +1,1 @@
+--portable=true --hid=sdl {{CONTROLLER_ARG}} {{RIGHT_X_ARG}} {{PROFILE_XUID_ARG}} --network_mode=2 --upnp=false --network_synthetic_loopback=true {{API_ARG}} {{PEER_IPV4_ARG}} --aot_runtime_sa2=true --aot_runtime_leg_destination_repair=true --aot_runtime_xport_control_load_repair=true --apply_patches=true --auto_check_updates=false --log_level=2 {{GAME_ARG}}

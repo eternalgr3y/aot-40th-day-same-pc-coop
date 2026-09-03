@@ -121,6 +121,19 @@ function Assert-Rejected {
 }
 
 $profile = Import-PowerShellDataFile -LiteralPath $profilePath
+# The published templates retain the original physical-controller B19
+# command contract. Check its fingerprints even without a private rig config
+# so a later local trace revision cannot silently replace publication proof.
+Assert-Equal $profile.Daddy.FrozenLineSha256 `
+    '2C604E2C124AE9485E716AC615F64EF6B9760CA52D160FAB15A09D1A09744BC6' `
+    'Daddy published frozen command fingerprint'
+Assert-Equal $profile.Cj.FrozenLineSha256 `
+    '72C1B51FBFFACEAFF9940EE24FFECE831DDB1868E10A344584258704E6DC4CFB' `
+    'CJ published frozen command fingerprint'
+Assert-Equal $profile.Daddy.FrozenBreakPcCount 605 `
+    'Daddy published frozen break-PC count'
+Assert-Equal $profile.Cj.FrozenBreakPcCount 626 `
+    'CJ published frozen break-PC count'
 $builderSource = Get-Content -Raw -LiteralPath $builder
 foreach ($requiredGate in 'inject.txt must contain exactly NONE',
                           'enabled patch set is unsafe',

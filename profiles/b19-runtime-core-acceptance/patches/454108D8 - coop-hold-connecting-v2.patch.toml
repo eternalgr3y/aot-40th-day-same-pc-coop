@@ -1,0 +1,75 @@
+title_name = "Army of Two: The 40th Day"
+title_id = "454108D8"
+hash = ["7C5F016EA6A81E95"]
+
+# ============================================================================
+# COOP - HOLD AT CONNECTING v2 (2026-07-01, branch-scoped fix).
+# SUPERSEDES coop-hold-connecting.patch.toml (disabled 2026-06-10). The v1
+# patch NOP'd the CALL SITE at 0x82c89a0c (bl 0x82c86a08), but that call site
+# is the ONLY caller of FUN_82c86a08, which is a SHARED dispatcher for BOTH
+# outcomes of the join-timeout watchdog: param_2==0 draws "CONNECTION LOST"
+# and tears down the session (give-up); param_2!=0 runs the REAL join-complete
+# logic (roster insert, join-complete-skip-b's null-guarded service chain,
+# etc). NOPing the call site therefore silently killed BOTH paths -- daddy
+# would never time out, but would ALSO never complete the join even once CJ
+# genuinely connected. That's why v1 broke the join and was disabled.
+#
+# v2 fix: patch INSIDE FUN_82c86a08 instead, scoped to ONLY the give-up branch
+# (param_2==0), leaving the call site and the entire success branch (param_2!=0,
+# 0x82c86a7c onward, including the join-complete-skip-b service chain) fully
+# intact and untouched.
+#
+# Byte-verified disassembly of FUN_82c86a08 (raw Ghidra dump, 2026-07-01):
+#   82c86a28: cmplwi cr6,r10,0x0      ; r10 = low byte of param_2
+#   82c86a44: bne    cr6,0x82c86a7c   ; param_2!=0 -> SUCCESS branch (untouched)
+#   82c86a48: lwz    r5,0x17d8(r3)    ; <-- fall-through = param_2==0 (give-up)
+#   82c86a4c: li     r4,-0x2ae
+#   82c86a50: addi   r3,r3,0x17f8
+#   82c86a54: bl     0x82c78070       ; draws "CONNECTION LOST"
+#   ...
+#   82c86a68: beq    cr6,0x82c86c10   ; (no active session) -> clean exit
+#   82c86a6c: lwz    r3,0x16fc(r27)
+#   82c86a70: bl     0x82c565f8       ; tears down session (DELETE /sessions)
+#   82c86a74: addi   r1,r1,0x90       ; epilogue
+#   82c86a78: b      0x832c91c4       ; return
+#   82c86a7c: ...                     ; SUCCESS branch starts here (untouched)
+#   ...
+#   82c86c10: addi   r1,r1,0x90       ; SAME epilogue -- already a proven clean
+#   82c86c14: b      0x832c91c4       ; exit point, reached by the beq @82c86a68
+#                                       from inside this same give-up branch.
+#
+# PATCH: replace the give-up branch's FIRST instruction (0x82c86a48) with an
+# unconditional branch straight to the function's canonical clean-exit point
+# (0x82c86c10, same 2-instruction epilogue/return sequence as the give-up
+# branch's own normal exit at 0x82c86a74/a78). Effect: on give-up, the function
+# now does NOTHING (no CONNECTION LOST drawn, no teardown) and simply returns --
+# a true no-op. The watchdog (FUN_82c892f0, runs every frame) will just check
+# again next tick: still no peer -> no-op again -> ... -> forever, until a real
+# peer actually joins (param_1[100]==param_1[0x62]), at which point param_2=1
+# and the UNTOUCHED success branch runs exactly as it always has.
+#   0x82c86a48: lwz r5,0x17d8(r3)  (80 A3 17 D8)  ->  b 0x82c86c10 (48 00 01 C8)
+#     offset = 0x82c86c10 - 0x82c86a48 = 0x1C8; encoding cross-checked against
+#     two real unconditional branches in the SAME function: 0x82c86aa8 (offset
+#     0x8 -> 48000008) and 0x82c86be4 (offset 0x10 -> 48000010). Both match the
+#     0x48000000 | offset pattern used here.
+#
+# SAFE: does not touch the bne @0x82c86a44 (param_2 detection unchanged), does
+# not touch the success branch (0x82c86a7c+, including the coop-join-complete-
+# skip-b patched region at 0x82c86ac8+ -- that patch's own "must run with hold
+# OFF" warning referred to v1's blanket call-site NOP, not this branch-scoped
+# version, and remains compatible/required alongside this patch). Landing point
+# 0x82c86c10 is already a live, proven exit used by this same function's own
+# internal beq @0x82c86a68 -- identical stack/LR restore, no register hazard.
+#
+# Run on BOTH rigs (CJ's own self-host fallback is this same watchdog's give-up
+# firing on CJ's side; holding it open too avoids CJ bailing to self-host).
+# ============================================================================
+[[patch]]
+name = "Coop - HOLD at CONNECTING v2 (branch-scoped give-up no-op)"
+desc = "FUN_82c86a08 give-up branch (param_2==0): redirect 0x82c86a48 to the function's clean-exit point (0x82c86c10) instead of drawing CONNECTION LOST + tearing down the session. Success branch (param_2!=0, join-complete) is completely untouched. Daddy holds at CONNECTING indefinitely and still completes normally the moment a real peer joins."
+author = "AoT same-PC co-op research project"
+is_enabled = true
+
+[[patch.be32]]
+address = 0x82C86A48
+value = 0x480001C8
